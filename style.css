@@ -5,7 +5,9 @@
 body {
   margin: 0;
   padding: 32px;
+
   font-family: sans-serif;
+
   background: #f5f5f5;
 }
 
@@ -17,6 +19,7 @@ main {
 .controls {
   display: grid;
   gap: 16px;
+
   margin-bottom: 32px;
 }
 
@@ -25,20 +28,30 @@ main {
   gap: 8px;
 }
 
-.controls input[type="text"] {
+.controls input,
+.controls select {
+  width: 100%;
+
   padding: 10px;
+
   font-size: 16px;
 }
 
 button {
   width: fit-content;
+
   padding: 10px 20px;
+
   cursor: pointer;
+
+  font-size: 16px;
 }
 
 .preview canvas {
   display: block;
+
   width: 100%;
   height: auto;
+
   background: #ddd;
 }
