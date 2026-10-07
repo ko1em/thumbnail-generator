@@ -13,23 +13,23 @@
 const BACKGROUND_IMAGES = [
   {
     label: '猫',
-    path: './images/neko.jpg'
+    path: './images/neko.webp'
   },
   {
     label: '女性',
-    path: './images/woman.jpg'
+    path: './images/woman.webp'
   },
   {
     label: '男性',
-    path: './images/man.jpg'
+    path: './images/man.webp'
   },
   {
     label: '花',
-    path: './images/flower.jpg'
+    path: './images/flower.webp'
   },
   {
     label: '雲',
-    path: './images/cloud.jpg'
+    path: './images/cloud.webp'
   }
 ];
 
