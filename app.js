@@ -1,3 +1,4 @@
+```javascript
 /*
 =========================================================
 背景画像設定
@@ -12,24 +13,16 @@
  */
 const BACKGROUND_IMAGES = [
   {
-    label: '猫',
-    path: './images/neko.webp'
+    label: '背景1',
+    path: './images/background01.jpg'
   },
   {
-    label: '女性',
-    path: './images/woman.webp'
+    label: '背景2',
+    path: './images/background02.jpg'
   },
   {
-    label: '男性',
-    path: './images/man.webp'
-  },
-  {
-    label: '花',
-    path: './images/flower.webp'
-  },
-  {
-    label: '雲',
-    path: './images/cloud.webp'
+    label: '背景3',
+    path: './images/background03.jpg'
   }
 ];
 
@@ -52,6 +45,7 @@ HTML要素
 
 const backgroundSelect = document.querySelector('#backgroundSelect');
 const backgroundInput = document.querySelector('#backgroundInput');
+
 const textInput = document.querySelector('#textInput');
 
 const xInput = document.querySelector('#xInput');
@@ -71,10 +65,15 @@ const downloadButton = document.querySelector('#downloadButton');
 
 /**
  * 現在使用している背景画像。
- *
- * 背景画像が選択されていない場合はnull。
  */
 let backgroundImage = null;
+
+/**
+ * 現在作成している一時URL。
+ *
+ * 任意画像を選択したときに使用する。
+ */
+let backgroundObjectUrl = null;
 
 
 /*
@@ -102,7 +101,7 @@ const initializeBackgroundSelect = () => {
 
 /*
 =========================================================
-背景画像読み込み
+画像読み込み
 =========================================================
 */
 
@@ -122,7 +121,9 @@ const loadImage = ({ imagePath }) => {
     });
 
     image.addEventListener('error', () => {
-      reject(new Error(`画像を読み込めませんでした: ${imagePath}`));
+      reject(
+        new Error(`画像を読み込めませんでした: ${imagePath}`)
+      );
     });
 
     image.src = imagePath;
@@ -131,14 +132,37 @@ const loadImage = ({ imagePath }) => {
 
 
 /**
- * 選択された背景画像を読み込む。
+ * 現在の一時URLを解放する。
  */
-const updateBackgroundImage = async () => {
+const revokeBackgroundObjectUrl = () => {
+
+  if (!backgroundObjectUrl) {
+    return;
+  }
+
+  URL.revokeObjectURL(backgroundObjectUrl);
+
+  backgroundObjectUrl = null;
+};
+
+
+/*
+=========================================================
+登録画像
+=========================================================
+*/
+
+/**
+ * プルダウンで選択された登録画像を読み込む。
+ */
+const updateBackgroundImageFromSelect = async () => {
 
   const imagePath = backgroundSelect.value;
 
   if (!imagePath) {
+
     backgroundImage = null;
+
     render();
 
     return;
@@ -165,6 +189,60 @@ const updateBackgroundImage = async () => {
 
 /*
 =========================================================
+任意画像
+=========================================================
+*/
+
+/**
+ * PCから選択した任意画像を読み込む。
+ */
+const updateBackgroundImageFromFile = () => {
+
+  const file = backgroundInput.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  /*
+   * 以前の一時URLがあれば解放する。
+   */
+  revokeBackgroundObjectUrl();
+
+  /*
+   * 選択したローカルファイルから
+   * ブラウザ内で一時URLを作成する。
+   */
+  backgroundObjectUrl = URL.createObjectURL(file);
+
+  const image = new Image();
+
+  image.addEventListener('load', () => {
+
+    backgroundImage = image;
+
+    render();
+  });
+
+  image.addEventListener('error', () => {
+
+    console.error(
+      `画像を読み込めませんでした: ${file.name}`
+    );
+
+    backgroundImage = null;
+
+    revokeBackgroundObjectUrl();
+
+    render();
+  });
+
+  image.src = backgroundObjectUrl;
+};
+
+
+/*
+=========================================================
 Canvas描画
 =========================================================
 */
@@ -181,10 +259,6 @@ const clearCanvas = () => {
     canvas.height
   );
 
-  /*
-   * 背景画像がない場合でも
-   * Canvasの領域が分かるように仮の背景色を描画する。
-   */
   ctx.fillStyle = '#222';
 
   ctx.fillRect(
@@ -214,9 +288,6 @@ const drawBackground = () => {
   const imageWidth = backgroundImage.naturalWidth;
   const imageHeight = backgroundImage.naturalHeight;
 
-  /*
-   * Canvasに対して画像をcoverさせるための倍率。
-   */
   const scale = Math.max(
     canvasWidth / imageWidth,
     canvasHeight / imageHeight
@@ -225,9 +296,6 @@ const drawBackground = () => {
   const drawWidth = imageWidth * scale;
   const drawHeight = imageHeight * scale;
 
-  /*
-   * Canvas中央に配置。
-   */
   const x = (canvasWidth - drawWidth) / 2;
   const y = (canvasHeight - drawHeight) / 2;
 
@@ -255,9 +323,6 @@ const drawText = () => {
 
   const fontSize = Number(fontSizeInput.value);
 
-  /*
-   * 座標を原点として回転させる。
-   */
   ctx.save();
 
   ctx.translate(x, y);
@@ -266,29 +331,16 @@ const drawText = () => {
     rotation * Math.PI / 180
   );
 
-  /*
-   * 文字設定。
-   */
   ctx.font = `bold ${fontSize}px sans-serif`;
 
   ctx.textBaseline = 'middle';
 
-  /*
-   * 文字のアウトライン。
-   */
   ctx.lineWidth = 16;
 
   ctx.strokeStyle = '#000';
 
-  /*
-   * 文字本体。
-   */
   ctx.fillStyle = '#fff';
 
-  /*
-   * translate()によって
-   * x=0、y=0が指定した座標になっている。
-   */
   ctx.strokeText(
     text,
     0,
@@ -301,9 +353,6 @@ const drawText = () => {
     0
   );
 
-  /*
-   * Canvasの状態を元に戻す。
-   */
   ctx.restore();
 };
 
@@ -328,12 +377,43 @@ const render = () => {
 */
 
 /**
- * 背景画像が変更された。
+ * 登録画像が変更された。
  */
 backgroundSelect.addEventListener(
   'change',
   () => {
-    updateBackgroundImage();
+
+    /*
+     * 登録画像を選択した場合、
+     * 任意画像の選択状態を解除する。
+     */
+    backgroundInput.value = '';
+
+    revokeBackgroundObjectUrl();
+
+    updateBackgroundImageFromSelect();
+  }
+);
+
+
+/**
+ * 任意画像が選択された。
+ */
+backgroundInput.addEventListener(
+  'change',
+  () => {
+
+    if (!backgroundInput.files[0]) {
+      return;
+    }
+
+    /*
+     * 任意画像を選択した場合、
+     * 登録画像の選択状態を解除する。
+     */
+    backgroundSelect.value = '';
+
+    updateBackgroundImageFromFile();
   }
 );
 
@@ -434,3 +514,4 @@ downloadButton.addEventListener(
 initializeBackgroundSelect();
 
 render();
+```
