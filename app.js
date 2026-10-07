@@ -51,6 +51,7 @@ HTML要素
 */
 
 const backgroundSelect = document.querySelector('#backgroundSelect');
+const backgroundInput = document.querySelector('#backgroundInput');
 const textInput = document.querySelector('#textInput');
 
 const xInput = document.querySelector('#xInput');
