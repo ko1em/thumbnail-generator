@@ -1,28 +1,29 @@
-```javascript
 /*
 =========================================================
 背景画像設定
 =========================================================
 */
 
-/**
- * ./images/ フォルダー内に置いた画像。
- *
- * ここに画像を追加すると、
- * 背景画像のプルダウンにも追加できる。
- */
 const BACKGROUND_IMAGES = [
   {
-    label: '背景1',
-    path: './images/background01.jpg'
+    label: '猫',
+    path: './images/neko.webp'
   },
   {
-    label: '背景2',
-    path: './images/background02.jpg'
+    label: '女性',
+    path: './images/woman.webp'
   },
   {
-    label: '背景3',
-    path: './images/background03.jpg'
+    label: '男性',
+    path: './images/man.webp'
+  },
+  {
+    label: '花',
+    path: './images/flower.webp'
+  },
+  {
+    label: '雲',
+    path: './images/cloud.webp'
   }
 ];
 
@@ -64,26 +65,25 @@ const downloadButton = document.querySelector('#downloadButton');
 */
 
 /**
- * 現在使用している背景画像。
+ * 現在Canvasに表示する背景画像。
  */
 let backgroundImage = null;
 
+
 /**
- * 現在作成している一時URL。
- *
- * 任意画像を選択したときに使用する。
+ * 任意画像用のObject URL。
  */
 let backgroundObjectUrl = null;
 
 
 /*
 =========================================================
-背景画像プルダウン
+登録画像
 =========================================================
 */
 
 /**
- * 背景画像の選択肢を作成する。
+ * 登録画像のプルダウンを作成する。
  */
 const initializeBackgroundSelect = () => {
 
@@ -99,19 +99,15 @@ const initializeBackgroundSelect = () => {
 };
 
 
-/*
-=========================================================
-画像読み込み
-=========================================================
-*/
-
 /**
- * 指定された画像を読み込む。
+ * 登録画像を読み込む。
  *
- * @param {string} imagePath
+ * @param {object} params
+ * @param {string} params.imagePath
  * @returns {Promise<HTMLImageElement>}
  */
 const loadImage = ({ imagePath }) => {
+
   return new Promise((resolve, reject) => {
 
     const image = new Image();
@@ -132,30 +128,9 @@ const loadImage = ({ imagePath }) => {
 
 
 /**
- * 現在の一時URLを解放する。
+ * 登録画像を選択したときの処理。
  */
-const revokeBackgroundObjectUrl = () => {
-
-  if (!backgroundObjectUrl) {
-    return;
-  }
-
-  URL.revokeObjectURL(backgroundObjectUrl);
-
-  backgroundObjectUrl = null;
-};
-
-
-/*
-=========================================================
-登録画像
-=========================================================
-*/
-
-/**
- * プルダウンで選択された登録画像を読み込む。
- */
-const updateBackgroundImageFromSelect = async () => {
+const updateBackgroundFromSelect = async () => {
 
   const imagePath = backgroundSelect.value;
 
@@ -170,9 +145,11 @@ const updateBackgroundImageFromSelect = async () => {
 
   try {
 
-    backgroundImage = await loadImage({
+    const image = await loadImage({
       imagePath
     });
+
+    backgroundImage = image;
 
     render();
 
@@ -194,9 +171,9 @@ const updateBackgroundImageFromSelect = async () => {
 */
 
 /**
- * PCから選択した任意画像を読み込む。
+ * 任意画像を選択したときの処理。
  */
-const updateBackgroundImageFromFile = () => {
+const updateBackgroundFromFile = () => {
 
   const file = backgroundInput.files[0];
 
@@ -205,13 +182,18 @@ const updateBackgroundImageFromFile = () => {
   }
 
   /*
-   * 以前の一時URLがあれば解放する。
+   * 以前のObject URLを解放する。
    */
-  revokeBackgroundObjectUrl();
+  if (backgroundObjectUrl) {
+
+    URL.revokeObjectURL(backgroundObjectUrl);
+
+    backgroundObjectUrl = null;
+  }
 
   /*
-   * 選択したローカルファイルから
-   * ブラウザ内で一時URLを作成する。
+   * ローカルファイルから
+   * ブラウザ内だけで使用するURLを作る。
    */
   backgroundObjectUrl = URL.createObjectURL(file);
 
@@ -227,12 +209,10 @@ const updateBackgroundImageFromFile = () => {
   image.addEventListener('error', () => {
 
     console.error(
-      `画像を読み込めませんでした: ${file.name}`
+      `任意画像を読み込めませんでした: ${file.name}`
     );
 
     backgroundImage = null;
-
-    revokeBackgroundObjectUrl();
 
     render();
   });
@@ -243,12 +223,12 @@ const updateBackgroundImageFromFile = () => {
 
 /*
 =========================================================
-Canvas描画
+Canvas
 =========================================================
 */
 
 /**
- * Canvasを初期状態に戻す。
+ * Canvasをクリアする。
  */
 const clearCanvas = () => {
 
@@ -272,9 +252,6 @@ const clearCanvas = () => {
 
 /**
  * 背景画像をCanvasいっぱいに描画する。
- *
- * 縦横比を維持したまま1920×1080に収め、
- * 余った部分を切り取る。
  */
 const drawBackground = () => {
 
@@ -320,7 +297,6 @@ const drawText = () => {
   const y = Number(yInput.value);
 
   const rotation = Number(rotationInput.value);
-
   const fontSize = Number(fontSizeInput.value);
 
   ctx.save();
@@ -336,7 +312,6 @@ const drawText = () => {
   ctx.textBaseline = 'middle';
 
   ctx.lineWidth = 16;
-
   ctx.strokeStyle = '#000';
 
   ctx.fillStyle = '#fff';
@@ -358,7 +333,7 @@ const drawText = () => {
 
 
 /**
- * Canvas全体を描画する。
+ * Canvas全体を再描画する。
  */
 const render = () => {
 
@@ -377,21 +352,18 @@ const render = () => {
 */
 
 /**
- * 登録画像が変更された。
+ * 登録画像が選択された。
  */
 backgroundSelect.addEventListener(
   'change',
   () => {
 
     /*
-     * 登録画像を選択した場合、
-     * 任意画像の選択状態を解除する。
+     * 任意画像の選択を解除する。
      */
     backgroundInput.value = '';
 
-    revokeBackgroundObjectUrl();
-
-    updateBackgroundImageFromSelect();
+    updateBackgroundFromSelect();
   }
 );
 
@@ -403,23 +375,18 @@ backgroundInput.addEventListener(
   'change',
   () => {
 
-    if (!backgroundInput.files[0]) {
-      return;
-    }
-
     /*
-     * 任意画像を選択した場合、
-     * 登録画像の選択状態を解除する。
+     * 登録画像の選択を解除する。
      */
     backgroundSelect.value = '';
 
-    updateBackgroundImageFromFile();
+    updateBackgroundFromFile();
   }
 );
 
 
 /**
- * テキストが変更された。
+ * テキスト変更。
  */
 textInput.addEventListener(
   'input',
@@ -430,7 +397,7 @@ textInput.addEventListener(
 
 
 /**
- * X座標が変更された。
+ * X座標変更。
  */
 xInput.addEventListener(
   'input',
@@ -441,7 +408,7 @@ xInput.addEventListener(
 
 
 /**
- * Y座標が変更された。
+ * Y座標変更。
  */
 yInput.addEventListener(
   'input',
@@ -452,7 +419,7 @@ yInput.addEventListener(
 
 
 /**
- * 回転角度が変更された。
+ * 回転角度変更。
  */
 rotationInput.addEventListener(
   'input',
@@ -463,7 +430,7 @@ rotationInput.addEventListener(
 
 
 /**
- * 文字サイズが変更された。
+ * 文字サイズ変更。
  */
 fontSizeInput.addEventListener(
   'input',
@@ -475,7 +442,7 @@ fontSizeInput.addEventListener(
 
 /*
 =========================================================
-PNGダウンロード
+ダウンロード
 =========================================================
 */
 
@@ -514,4 +481,3 @@ downloadButton.addEventListener(
 initializeBackgroundSelect();
 
 render();
-```
