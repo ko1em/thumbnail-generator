@@ -2,11 +2,52 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>サムネイル生成テスト</title>
-</head>
-<body>
-  <h1>サムネイル生成テスト</h1>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <p>GitHub Pagesのテスト中。</p>
+  <title>サムネイル生成テスト</title>
+
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+  <main>
+    <h1>サムネイル生成テスト</h1>
+
+    <section class="controls">
+
+      <label>
+        背景画像
+        <input
+          id="backgroundInput"
+          type="file"
+          accept="image/*"
+        >
+      </label>
+
+      <label>
+        テキスト
+        <input
+          id="textInput"
+          type="text"
+          value="INK WAVE"
+        >
+      </label>
+
+      <button id="downloadButton" type="button">
+        PNGをダウンロード
+      </button>
+
+    </section>
+
+    <section class="preview">
+      <canvas
+        id="canvas"
+        width="1920"
+        height="1080"
+      ></canvas>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
