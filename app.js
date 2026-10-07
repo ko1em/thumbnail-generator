@@ -1,33 +1,208 @@
-const canvas = document.querySelector("#canvas");
-const ctx = canvas.getContext("2d");
+/*
+=========================================================
+背景画像設定
+=========================================================
+*/
 
-const backgroundInput = document.querySelector("#backgroundInput");
-const textInput = document.querySelector("#textInput");
-const downloadButton = document.querySelector("#downloadButton");
+/**
+ * ./images/ フォルダー内に置いた画像。
+ *
+ * ここに画像を追加すると、
+ * 背景画像のプルダウンにも追加できる。
+ */
+const BACKGROUND_IMAGES = [
+  {
+    label: '猫',
+    path: './images/neko.jpg'
+  },
+  {
+    label: '女性',
+    path: './images/woman.jpg'
+  },
+  {
+    label: '男性',
+    path: './images/man.jpg'
+  },
+  {
+    label: '花',
+    path: './images/flower.jpg'
+  },
+  {
+    label: '雲',
+    path: './images/cloud.jpg'
+  }
+];
 
-// 現在選択されている背景画像。
-// 画像が選択されていない場合はnull。
+
+/*
+=========================================================
+Canvas
+=========================================================
+*/
+
+const canvas = document.querySelector('#canvas');
+const ctx = canvas.getContext('2d');
+
+
+/*
+=========================================================
+HTML要素
+=========================================================
+*/
+
+const backgroundSelect = document.querySelector('#backgroundSelect');
+const textInput = document.querySelector('#textInput');
+
+const xInput = document.querySelector('#xInput');
+const yInput = document.querySelector('#yInput');
+
+const rotationInput = document.querySelector('#rotationInput');
+const fontSizeInput = document.querySelector('#fontSizeInput');
+
+const downloadButton = document.querySelector('#downloadButton');
+
+
+/*
+=========================================================
+状態
+=========================================================
+*/
+
+/**
+ * 現在使用している背景画像。
+ *
+ * 背景画像が選択されていない場合はnull。
+ */
 let backgroundImage = null;
+
+
+/*
+=========================================================
+背景画像プルダウン
+=========================================================
+*/
+
+/**
+ * 背景画像の選択肢を作成する。
+ */
+const initializeBackgroundSelect = () => {
+
+  for (const background of BACKGROUND_IMAGES) {
+
+    const option = document.createElement('option');
+
+    option.value = background.path;
+    option.textContent = background.label;
+
+    backgroundSelect.appendChild(option);
+  }
+};
+
+
+/*
+=========================================================
+背景画像読み込み
+=========================================================
+*/
+
+/**
+ * 指定された画像を読み込む。
+ *
+ * @param {string} imagePath
+ * @returns {Promise<HTMLImageElement>}
+ */
+const loadImage = ({ imagePath }) => {
+  return new Promise((resolve, reject) => {
+
+    const image = new Image();
+
+    image.addEventListener('load', () => {
+      resolve(image);
+    });
+
+    image.addEventListener('error', () => {
+      reject(new Error(`画像を読み込めませんでした: ${imagePath}`));
+    });
+
+    image.src = imagePath;
+  });
+};
+
+
+/**
+ * 選択された背景画像を読み込む。
+ */
+const updateBackgroundImage = async () => {
+
+  const imagePath = backgroundSelect.value;
+
+  if (!imagePath) {
+    backgroundImage = null;
+    render();
+
+    return;
+  }
+
+  try {
+
+    backgroundImage = await loadImage({
+      imagePath
+    });
+
+    render();
+
+  } catch (error) {
+
+    console.error(error);
+
+    backgroundImage = null;
+
+    render();
+  }
+};
+
+
+/*
+=========================================================
+Canvas描画
+=========================================================
+*/
 
 /**
  * Canvasを初期状態に戻す。
  */
 const clearCanvas = () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 背景画像がない場合でも確認しやすいように
-  // 仮の背景色を描画する。
-  ctx.fillStyle = "#222";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  /*
+   * 背景画像がない場合でも
+   * Canvasの領域が分かるように仮の背景色を描画する。
+   */
+  ctx.fillStyle = '#222';
+
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
 };
+
 
 /**
  * 背景画像をCanvasいっぱいに描画する。
  *
- * 縦横比を維持したまま1920×1080に収める。
- * 余った部分は切り取る方式。
+ * 縦横比を維持したまま1920×1080に収め、
+ * 余った部分を切り取る。
  */
 const drawBackground = () => {
+
   if (!backgroundImage) {
     return;
   }
@@ -38,7 +213,9 @@ const drawBackground = () => {
   const imageWidth = backgroundImage.naturalWidth;
   const imageHeight = backgroundImage.naturalHeight;
 
-  // Canvasに対して画像をcoverさせるための倍率を計算。
+  /*
+   * Canvasに対して画像をcoverさせるための倍率。
+   */
   const scale = Math.max(
     canvasWidth / imageWidth,
     canvasHeight / imageHeight
@@ -47,7 +224,9 @@ const drawBackground = () => {
   const drawWidth = imageWidth * scale;
   const drawHeight = imageHeight * scale;
 
-  // 中央配置。
+  /*
+   * Canvas中央に配置。
+   */
   const x = (canvasWidth - drawWidth) / 2;
   const y = (canvasHeight - drawHeight) / 2;
 
@@ -60,94 +239,197 @@ const drawBackground = () => {
   );
 };
 
+
 /**
- * サムネイル全体を描画する。
+ * テキストを描画する。
+ */
+const drawText = () => {
+
+  const text = textInput.value;
+
+  const x = Number(xInput.value);
+  const y = Number(yInput.value);
+
+  const rotation = Number(rotationInput.value);
+
+  const fontSize = Number(fontSizeInput.value);
+
+  /*
+   * 座標を原点として回転させる。
+   */
+  ctx.save();
+
+  ctx.translate(x, y);
+
+  ctx.rotate(
+    rotation * Math.PI / 180
+  );
+
+  /*
+   * 文字設定。
+   */
+  ctx.font = `bold ${fontSize}px sans-serif`;
+
+  ctx.textBaseline = 'middle';
+
+  /*
+   * 文字のアウトライン。
+   */
+  ctx.lineWidth = 16;
+
+  ctx.strokeStyle = '#000';
+
+  /*
+   * 文字本体。
+   */
+  ctx.fillStyle = '#fff';
+
+  /*
+   * translate()によって
+   * x=0、y=0が指定した座標になっている。
+   */
+  ctx.strokeText(
+    text,
+    0,
+    0
+  );
+
+  ctx.fillText(
+    text,
+    0,
+    0
+  );
+
+  /*
+   * Canvasの状態を元に戻す。
+   */
+  ctx.restore();
+};
+
+
+/**
+ * Canvas全体を描画する。
  */
 const render = () => {
+
   clearCanvas();
 
   drawBackground();
 
-  // 文字列を描画。
-  const text = textInput.value;
-
-  ctx.font = "bold 100px sans-serif";
-  ctx.textBaseline = "middle";
-
-  // 文字のアウトライン。
-  ctx.lineWidth = 16;
-  ctx.strokeStyle = "#000";
-
-  // 文字本体。
-  ctx.fillStyle = "#fff";
-
-  // 左側に配置。
-  const x = 120;
-  const y = canvas.height / 2;
-
-  ctx.strokeText(text, x, y);
-  ctx.fillText(text, x, y);
+  drawText();
 };
 
-/**
- * ローカル画像を読み込む。
- *
- * ここではサーバーへのアップロードは行わない。
- * File APIでブラウザ内に読み込んでいるだけ。
- */
-backgroundInput.addEventListener("change", () => {
-  const file = backgroundInput.files[0];
 
-  if (!file) {
-    backgroundImage = null;
-    render();
-    return;
+/*
+=========================================================
+イベント
+=========================================================
+*/
+
+/**
+ * 背景画像が変更された。
+ */
+backgroundSelect.addEventListener(
+  'change',
+  () => {
+    updateBackgroundImage();
   }
+);
 
-  const imageUrl = URL.createObjectURL(file);
 
-  const image = new Image();
-
-  image.addEventListener("load", () => {
-    backgroundImage = image;
-
-    // Blob URLは読み込みが終わったら解放する。
-    URL.revokeObjectURL(imageUrl);
-
+/**
+ * テキストが変更された。
+ */
+textInput.addEventListener(
+  'input',
+  () => {
     render();
-  });
+  }
+);
 
-  image.src = imageUrl;
-});
-
-/**
- * 文字列が変更されたら即座に再描画する。
- */
-textInput.addEventListener("input", () => {
-  render();
-});
 
 /**
- * Canvasの内容をPNGとしてダウンロードする。
+ * X座標が変更された。
  */
-downloadButton.addEventListener("click", () => {
-  canvas.toBlob((blob) => {
-    if (!blob) {
-      return;
-    }
+xInput.addEventListener(
+  'input',
+  () => {
+    render();
+  }
+);
 
-    const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
+/**
+ * Y座標が変更された。
+ */
+yInput.addEventListener(
+  'input',
+  () => {
+    render();
+  }
+);
 
-    link.href = url;
-    link.download = "thumbnail.png";
 
-    link.click();
+/**
+ * 回転角度が変更された。
+ */
+rotationInput.addEventListener(
+  'input',
+  () => {
+    render();
+  }
+);
 
-    URL.revokeObjectURL(url);
-  }, "image/png");
-});
 
-// 最初の状態を描画。
+/**
+ * 文字サイズが変更された。
+ */
+fontSizeInput.addEventListener(
+  'input',
+  () => {
+    render();
+  }
+);
+
+
+/*
+=========================================================
+PNGダウンロード
+=========================================================
+*/
+
+downloadButton.addEventListener(
+  'click',
+  () => {
+
+    canvas.toBlob((blob) => {
+
+      if (!blob) {
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = 'thumbnail.png';
+
+      link.click();
+
+      URL.revokeObjectURL(url);
+
+    }, 'image/png');
+  }
+);
+
+
+/*
+=========================================================
+初期化
+=========================================================
+*/
+
+initializeBackgroundSelect();
+
 render();
